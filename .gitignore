@@ -36,3 +36,9 @@ dist/
 # (Optional) Ignore large data files
 # data/*.csv
 # data/*.parquet
+
+# Ignore Positron Markdown preview artifacts
+README.html
+README_files/
+*.html
+*_files/
