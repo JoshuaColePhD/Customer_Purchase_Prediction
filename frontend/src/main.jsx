@@ -62,6 +62,86 @@ function money(value) {
   }).format(value);
 }
 
+function calculateImpact(outreachRate, revenue) {
+  const baseline = 0.4333;
+  const targeted = Math.max(0.52, 1.035 - outreachRate * 0.0026);
+  const contacted = Math.round(300 * (outreachRate / 100));
+  const incrementalPurchases = Math.max(0, (targeted - baseline) * contacted);
+
+  return {
+    targeted,
+    contacted,
+    lift: targeted / baseline,
+    incrementalPurchases,
+    incrementalRevenue: incrementalPurchases * revenue,
+  };
+}
+
+function buildExecutiveSummary(outreachRate, revenue, impact) {
+  const modelRows = modelMetrics
+    .map(
+      (model) =>
+        `| ${model.name} | ${model.accuracy.toFixed(3)} | ${model.precision.toFixed(3)} | ${model.recall.toFixed(3)} | ${model.auc.toFixed(3)} | ${model.cv} |`
+    )
+    .join("\n");
+
+  const driverRows = featureImportance
+    .map(([feature, value]) => `| ${feature} | ${value.toFixed(4)} |`)
+    .join("\n");
+
+  const segmentSummary = segmentRows
+    .map(([band, score, intent, revenueEstimate, decision]) => `- ${band}: ${intent} intent, average score ${score}, ${decision}, estimated revenue ${revenueEstimate}.`)
+    .join("\n");
+
+  return `# Customer Purchase Prediction Executive Summary
+
+## Recommended Model
+
+Random Forest is the deployment candidate because it offers the strongest holdout performance and cross-validated ranking stability.
+
+| Model | Accuracy | Precision | Recall | ROC-AUC | CV ROC-AUC |
+|---|---:|---:|---:|---:|---:|
+${modelRows}
+
+## Campaign Impact Scenario
+
+- Outreach rate: ${outreachRate}%
+- Revenue per purchase: ${money(revenue)}
+- Contacted customers in holdout simulation: ${impact.contacted}
+- Targeted conversion rate: ${pct(impact.targeted)}
+- Conversion lift versus baseline: ${impact.lift.toFixed(2)}x
+- Estimated incremental revenue: ${money(impact.incrementalRevenue)}
+
+## Top Purchase Drivers
+
+| Feature | Relative Importance |
+|---|---:|
+${driverRows}
+
+## Segment Strategy
+
+${segmentSummary}
+
+## Business Recommendation
+
+Use predicted purchase propensity as a campaign prioritization layer. When budget is constrained, favor the highest-score customer bands to protect precision and reduce wasted outreach. When the business goal is reach or awareness, lower the threshold and monitor recall, conversion lift, and incremental revenue by segment.
+`;
+}
+
+function downloadSummary(outreachRate, revenue, impact) {
+  const summary = buildExecutiveSummary(outreachRate, revenue, impact);
+  const blob = new Blob([summary], { type: "text/markdown;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = url;
+  link.download = "customer-purchase-summary.md";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
 function Sidebar({ activeSection, onNavigate }) {
   return (
     <aside className="sidebar">
@@ -146,24 +226,14 @@ function Score({ label, value }) {
   );
 }
 
-function ImpactSimulator({ isActive }) {
-  const [outreachRate, setOutreachRate] = useState(20);
-  const [revenue, setRevenue] = useState(100);
-
-  const impact = useMemo(() => {
-    const baseline = 0.4333;
-    const targeted = Math.max(0.52, 1.035 - outreachRate * 0.0026);
-    const contacted = Math.round(300 * (outreachRate / 100));
-    const incrementalPurchases = Math.max(0, (targeted - baseline) * contacted);
-    return {
-      targeted,
-      contacted,
-      lift: targeted / baseline,
-      incrementalPurchases,
-      incrementalRevenue: incrementalPurchases * revenue,
-    };
-  }, [outreachRate, revenue]);
-
+function ImpactSimulator({
+  impact,
+  isActive,
+  outreachRate,
+  revenue,
+  setOutreachRate,
+  setRevenue,
+}) {
   return (
     <section className={panelClass("panel impactPanel", isActive)} id="campaign">
       <div className="panelHeader">
@@ -333,6 +403,12 @@ function SegmentTable({ isActive }) {
 
 function App() {
   const [activeSection, setActiveSection] = useState("overview");
+  const [outreachRate, setOutreachRate] = useState(20);
+  const [revenue, setRevenue] = useState(100);
+  const impact = useMemo(
+    () => calculateImpact(outreachRate, revenue),
+    [outreachRate, revenue]
+  );
 
   function handleNavigate(targetId) {
     const target = document.getElementById(targetId);
@@ -354,7 +430,12 @@ function App() {
             <h1>Campaign Targeting Dashboard</h1>
             <p>Prioritize customers by purchase propensity and forecast conversion lift.</p>
           </div>
-          <button>Export summary</button>
+          <button
+            onClick={() => downloadSummary(outreachRate, revenue, impact)}
+            type="button"
+          >
+            Export summary
+          </button>
         </header>
 
         <section className="metricsGrid">
@@ -367,7 +448,14 @@ function App() {
 
         <section className="dashboardGrid">
           <ModelComparison isActive={activeSection === "model"} />
-          <ImpactSimulator isActive={activeSection === "campaign"} />
+          <ImpactSimulator
+            impact={impact}
+            isActive={activeSection === "campaign"}
+            outreachRate={outreachRate}
+            revenue={revenue}
+            setOutreachRate={setOutreachRate}
+            setRevenue={setRevenue}
+          />
           <RocChart />
           <ConfusionMatrix />
           <FeatureDrivers isActive={activeSection === "drivers"} />
