@@ -6,6 +6,15 @@
   text-rendering: optimizeLegibility;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
+section[id],
+header[id] {
+  scroll-margin-top: 22px;
+}
+
 * {
   box-sizing: border-box;
 }

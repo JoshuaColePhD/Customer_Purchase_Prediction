@@ -42,6 +42,13 @@ const segmentRows = [
 
 const rocPath = "M 26 214 C 58 168, 85 119, 124 92 C 165 63, 206 45, 258 35";
 const logisticPath = "M 26 214 C 60 178, 96 140, 134 115 C 176 89, 214 71, 258 57";
+const navItems = [
+  ["Overview", "overview"],
+  ["Model", "model"],
+  ["Campaign", "campaign"],
+  ["Drivers", "drivers"],
+  ["Segments", "segments"],
+];
 
 function pct(value) {
   return `${(value * 100).toFixed(1)}%`;
@@ -55,7 +62,7 @@ function money(value) {
   }).format(value);
 }
 
-function Sidebar() {
+function Sidebar({ activeSection, onNavigate }) {
   return (
     <aside className="sidebar">
       <div className="brand">
@@ -66,9 +73,15 @@ function Sidebar() {
         </div>
       </div>
       <nav className="nav">
-        {["Overview", "Model", "Campaign", "Drivers", "Segments"].map((item) => (
-          <button className={item === "Overview" ? "active" : ""} key={item}>
-            {item}
+        {navItems.map(([label, targetId]) => (
+          <button
+            aria-current={activeSection === targetId ? "page" : undefined}
+            className={activeSection === targetId ? "active" : ""}
+            key={targetId}
+            onClick={() => onNavigate(targetId)}
+            type="button"
+          >
+            {label}
           </button>
         ))}
       </nav>
@@ -93,7 +106,7 @@ function MetricCard({ label, value, sub, tone = "teal" }) {
 
 function ModelComparison() {
   return (
-    <section className="panel modelPanel">
+    <section className="panel modelPanel" id="model">
       <div className="panelHeader">
         <div>
           <h2>Model Comparison</h2>
@@ -148,7 +161,7 @@ function ImpactSimulator() {
   }, [outreachRate, revenue]);
 
   return (
-    <section className="panel impactPanel">
+    <section className="panel impactPanel" id="campaign">
       <div className="panelHeader">
         <div>
           <h2>Business Impact Simulator</h2>
@@ -259,7 +272,7 @@ function ConfusionMatrix() {
 function FeatureDrivers() {
   const max = Math.max(...featureImportance.map(([, value]) => value));
   return (
-    <section className="panel driversPanel">
+    <section className="panel driversPanel" id="drivers">
       <div className="panelHeader">
         <div>
           <h2>Top Purchase Drivers</h2>
@@ -283,7 +296,7 @@ function FeatureDrivers() {
 
 function SegmentTable() {
   return (
-    <section className="panel segmentPanel">
+    <section className="panel segmentPanel" id="segments">
       <div className="panelHeader">
         <div>
           <h2>Segment Strategy</h2>
@@ -315,11 +328,21 @@ function SegmentTable() {
 }
 
 function App() {
+  const [activeSection, setActiveSection] = useState("overview");
+
+  function handleNavigate(targetId) {
+    const target = document.getElementById(targetId);
+    if (!target) return;
+
+    setActiveSection(targetId);
+    target.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
   return (
     <main className="app">
-      <Sidebar />
+      <Sidebar activeSection={activeSection} onNavigate={handleNavigate} />
       <section className="workspace">
-        <header className="topbar">
+        <header className="topbar" id="overview">
           <div>
             <h1>Campaign Targeting Dashboard</h1>
             <p>Prioritize customers by purchase propensity and forecast conversion lift.</p>
