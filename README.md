@@ -1,187 +1,175 @@
-# 📘 E-commerce Customer Purchase Prediction and Feature Importance Analysis
+# Customer Purchase Prediction
 
-![Python](https://img.shields.io/badge/Python-3.13-blue)
-![scikit-learn](https://img.shields.io/badge/scikit--learn-1.4-orange)
-![Pandas](https://img.shields.io/badge/Pandas-Data%20Analysis-green)
+![Python](https://img.shields.io/badge/Python-3.9%2B-blue)
+![scikit-learn](https://img.shields.io/badge/scikit--learn-1.4%2B-orange)
 ![Status](https://img.shields.io/badge/Status-Completed-brightgreen)
 
----
+## Business Problem
 
-# 📂 Project Overview
+Marketing teams often have more prospective customers than budgeted outreach capacity. This project builds a purchase propensity model that ranks customers by likelihood to buy, allowing a business to prioritize high-intent customers, reduce wasted campaign spend, and tune the trade-off between reach and conversion quality.
 
-This project builds a complete end-to-end **machine learning pipeline** to predict whether a customer will make a purchase based on demographic and behavioral data. The workflow includes:  
-data loading, exploration, preprocessing, feature engineering, model training, evaluation, and insight generation.
+The modeling question is:
 
----
+> Which customers are most likely to purchase, and which behavioral signals should drive campaign targeting?
 
-# 🧾 Executive Summary
+## Executive Summary
 
-Using a dataset of **1,500 customers**, this project compares two classification models—**Logistic Regression** and **Random Forest**—to predict purchase behavior.
+Using 1,500 customer records with demographic, purchase-history, website-engagement, loyalty, and discount features, I compared an interpretable Logistic Regression baseline against a nonlinear Random Forest classifier.
 
-Key steps include:
+The Random Forest is the stronger deployment candidate:
 
-- Exploratory data analysis  
-- Data cleaning and preprocessing  
-- Feature engineering  
-- Training and evaluating two classification models  
-- Interpreting feature importance  
-- Generating actionable business insights  
+| Model | Accuracy | Precision | Recall | ROC-AUC | CV ROC-AUC |
+|---|---:|---:|---:|---:|---:|
+| Logistic Regression | 0.843 | 0.855 | 0.769 | 0.903 | 0.887 +/- 0.027 |
+| Random Forest | 0.923 | 0.942 | 0.877 | 0.939 | 0.944 +/- 0.024 |
 
-### 🔑 Key Findings
+Business interpretation:
 
-- **Random Forest outperforms Logistic Regression** with higher accuracy, precision, recall, and ROC-AUC.  
-- Behavioral attributes are the strongest predictors of purchase likelihood.  
-- The most influential features include:  
-  - `TimeSpentOnWebsite` (0.187)  
-  - `DiscountsAvailed` (0.153)  
-  - `LoyaltyProgram` (0.107)  
-- Demographic features play a secondary role, with **Gender** and **ProductCategory** contributing minimally.
+- Random Forest precision of 0.942 means most customers flagged for outreach are actual purchasers, reducing wasted campaign touches.
+- Recall of 0.877 means the model captures most purchasers while still enforcing useful targeting discipline.
+- In a simple targeting simulation, contacting the top 20% of customers by predicted purchase propensity produces a 98.3% conversion rate versus a 43.3% baseline rate, or a 2.27x conversion lift.
+- Assuming $100 revenue per purchase, the top-20% targeting scenario identifies roughly 33 incremental purchases in the 300-customer holdout sample, or $3,300 in incremental revenue.
 
-These results suggest that **behavior-driven marketing strategies** are more effective than demographic segmentation.
+## Pipeline Architecture
 
-## 📈 Model Performance Visualization
+The project is implemented as a reproducible scikit-learn workflow in [`src/main.py`](src/main.py):
 
-Below is the combined ROC curve comparing Logistic Regression and Random Forest performance on the test set:
+1. Load customer-level data from [`data/customer_purchase_data.csv`](data/customer_purchase_data.csv).
+2. Engineer an economic-value feature: `AvgSpendingPerPurchase`.
+3. Split data into stratified train/test samples to preserve purchase-rate balance.
+4. Apply preprocessing inside sklearn pipelines:
+   - Median imputation and standard scaling for numeric features.
+   - Most-frequent imputation and one-hot encoding for categorical features.
+5. Train Logistic Regression and Random Forest classifiers with identical preprocessing contracts.
+6. Validate model stability with 5-fold stratified cross-validation using ROC-AUC.
+7. Evaluate holdout performance using accuracy, precision, recall, ROC-AUC, confusion matrices, and ROC curves.
+8. Export business-labeled visualizations and Random Forest feature importances.
 
-![ROC Curve Comparison](figures/roc_curve_comparison.png)
+This structure avoids leakage because imputation, scaling, encoding, and feature creation are fit only on training folds during cross-validation and model training.
 
----
+## Feature Engineering
 
-# 📊 Dataset Overview
+| Feature | Type | Why It Matters |
+|---|---|---|
+| `TimeSpentOnWebsite` | Behavioral | Captures engagement intensity and near-term purchase intent. |
+| `DiscountsAvailed` | Behavioral | Measures promotion sensitivity and offer responsiveness. |
+| `LoyaltyProgram` | Behavioral / relationship | Indicates brand relationship depth and repeat-purchase potential. |
+| `NumberOfPurchases` | Behavioral | Captures historical buying frequency. |
+| `AvgSpendingPerPurchase` | Engineered | Normalizes income by purchase frequency to approximate customer economic value. |
+| `AnnualIncome` | Demographic / capacity | Proxies purchasing power. |
+| `Age`, `Gender`, `ProductCategory` | Demographic / preference | Provides secondary segmentation context. |
 
-The dataset contains **1,500 rows** and **10 variables** capturing demographic characteristics, web behavior, and purchase outcomes.
+The model results show that behavioral indicators dominate demographic segmentation. For a business audience, the practical recommendation is to prioritize engagement, loyalty, and discount-response signals over broad demographic targeting.
 
-### Data Dictionary
+## Model Results
 
-| Column                    | Description                                                   | Type     |
-|---------------------------|---------------------------------------------------------------|----------|
-| Age                       | Customer age (years)                                          | int64    |
-| Gender                    | Encoded gender indicator                                      | int64    |
-| AnnualIncome              | Annual income (USD)                                           | float64  |
-| NumberOfPurchases         | Total purchases in the last year                              | int64    |
-| ProductCategory           | Encoded product category viewed or purchased                  | int64    |
-| TimeSpentOnWebsite        | Average time spent on the website (minutes)                   | float64  |
-| LoyaltyProgram            | Whether user is enrolled in loyalty program                   | int64    |
-| DiscountsAvailed          | Number of discounts redeemed                                  | int64    |
-| PurchaseStatus            | Target variable (1 = Purchased, 0 = Not Purchased)            | int64    |
-| AvgSpendingPerPurchase    | Engineered: AnnualIncome / (NumberOfPurchases + 1)            | float64  |
+### ROC Curve
 
-### Attribute Groups
+The ROC curve compares each model's ability to rank likely purchasers above non-purchasers.
 
-- **Demographic:** Age, Gender, AnnualIncome  
-- **Behavioral:** NumberOfPurchases, ProductCategory, TimeSpentOnWebsite, DiscountsAvailed, LoyaltyProgram, AvgSpendingPerPurchase  
-- **Target:** PurchaseStatus  
+![ROC curve comparison](figures/roc_curve_comparison.png)
 
----
+### Confusion Matrix
 
-# 🔍 Data Loading and Exploration
+The Random Forest materially reduces both missed purchasers and wasted outreach compared with the baseline.
 
-**EDA Objectives**
+![Random Forest confusion matrix](figures/confusion_matrix_random_forest.png)
 
-- Review data types and summary stats  
-- Check for missing values  
-- Explore distributions and correlations  
-- Assess target class balance  
-- Visualize demographic and behavioral patterns  
+### Feature Importance
 
-**Key Visuals**
+Random Forest feature importance identifies the strongest purchase drivers:
 
-- Correlation heatmap  
-- Box plots comparing features by purchase status  
-- Count plots of categorical variables  
-- Histograms for numerical features  
+| Feature | Importance |
+|---|---:|
+| TimeSpentOnWebsite | 0.1856 |
+| DiscountsAvailed | 0.1707 |
+| Age | 0.1465 |
+| LoyaltyProgram | 0.1432 |
+| AnnualIncome | 0.1226 |
+| NumberOfPurchases | 0.1013 |
+| AvgSpendingPerPurchase | 0.0951 |
+| ProductCategory | 0.0234 |
+| Gender | 0.0116 |
 
----
+![Random Forest feature importance](figures/feature_importance_random_forest.png)
 
-# 🛠️ Preprocessing and Feature Engineering
+## Business Decision Framing
 
-### Steps Performed
+This model is most useful as a campaign prioritization layer, not as a fully automated decision system.
 
-**Missing Values**  
-- Numerical: filled using median  
-- Categorical: filled using mode  
+Recommended deployment framing:
 
-**Feature Engineering**  
-- Created `AvgSpendingPerPurchase` to capture spending behavior.
+- Use predicted probabilities to rank customers, then select an outreach threshold based on budget.
+- If campaign capacity is tight, optimize for precision to avoid spending on low-propensity customers.
+- If the business goal is market coverage or new product launch awareness, lower the threshold to increase recall.
+- Monitor conversion lift by decile so stakeholders can choose a targetable segment size with clear ROI.
+- Recalibrate thresholds after each campaign because discount strategy, seasonality, and acquisition channels can shift purchase behavior.
 
-**Encoding**  
-- One-hot encoding for `ProductCategory` and `Gender`  
-- Binary encoding for `LoyaltyProgram`  
+## Visual Outputs
 
-**Scaling**  
-- StandardScaler applied to numerical features  
+Generated figures are saved in [`figures/`](figures/):
 
-Preprocessing was implemented in a **ColumnTransformer** for consistency across models.
+- `roc_curve_comparison.png`
+- `roc_curve_logistic_regression.png`
+- `roc_curve_random_forest.png`
+- `confusion_matrix_logistic.png`
+- `confusion_matrix_random_forest.png`
+- `feature_importance_random_forest.png`
+- `feature_importance_random_forest.csv`
+- `purchase_status_distribution.png`
+- `boxplots_by_purchase_status.png`
 
----
+## Interactive Dashboard
 
-# 🤖 Model Training
+The repo also includes a Vercel-ready React dashboard in [`frontend/`](frontend/) that turns the ML outputs into an executive campaign targeting product.
 
-Two classification models were trained:
+![Dashboard preview](figures/dashboard_preview.png)
 
-- **Logistic Regression** (baseline)  
-- **Random Forest Classifier** (nonlinear and ensemble-based)  
+Dashboard features:
 
-A standard **80/20 train-test split** was used.
+- KPI strip for ROC-AUC, precision, recall, conversion lift, and incremental revenue.
+- Model comparison for Logistic Regression versus Random Forest.
+- Interactive outreach-rate and revenue-per-purchase simulator.
+- Business-labeled ROC curve, confusion matrix, feature importance, and segment strategy table.
 
----
+## Run the Project
 
-# 🚀 Advanced Model Evaluation
+```bash
+pip install -r requirements.txt
+python src/main.py
+```
 
-### 🔧 Model Performance
+The script prints model metrics, feature importances, and a business impact scenario, then regenerates all visual outputs in `figures/`.
 
-| Model                 | Accuracy | ROC–AUC | Key Observations |
-|----------------------|----------|---------|------------------|
-| Logistic Regression  | **0.8367** | **0.8989** | Interpretable baseline; lower recall for purchasers |
-| Random Forest        | **0.9600** | **0.9544** | Best performer; fewer misclassifications; strong class separation |
+Run the dashboard:
 
-### 📊 Classification Insights
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-- Logistic Regression struggles with nonlinear behavioral patterns.  
-- Random Forest substantially improves precision, recall, and AUC, making it ideal for customer purchase prediction.  
+Build for Vercel:
 
-### 📈 Visualization Outputs (saved in `figures/`)
+```bash
+cd frontend
+npm run build
+```
 
-- confusion_matrix_random_forest.png  
-- roc_curve_logistic_regression.png  
-- roc_curve_random_forest.png  
-- roc_curve_comparison.png  
+Vercel settings:
 
-These plots highlight the superior predictive performance of Random Forest.
+- Root directory: `frontend`
+- Build command: `npm run build`
+- Output directory: `dist`
 
----
+## Portfolio Value
 
-# 🌟 Feature Importance Analysis (Random Forest)
+This project demonstrates end-to-end applied ML fluency:
 
-| Feature                     | Importance |
-|----------------------------|-----------:|
-| TimeSpentOnWebsite         | 0.1873 |
-| Age                        | 0.1686 |
-| DiscountsAvailed           | 0.1534 |
-| AnnualIncome               | 0.1419 |
-| LoyaltyProgram             | 0.1066 |
-| NumberOfPurchases          | 0.1034 |
-| AvgSpendingPerPurchase     | 0.1032 |
-| ProductCategory            | 0.0254 |
-| Gender                     | 0.0102 |
-
-### 🔍 Insight  
-Behavioral factors dominate predictive power — particularly **engagement, discount behavior, and loyalty participation**.
-
----
-
-# 💼 Business Recommendations
-
-1. **Target high-engagement users**  
-   Customers spending more time on-site show high purchase intent.
-
-2. **Strengthen loyalty program offerings**  
-   LoyaltyProgram is a strong predictor; enhanced incentives may drive conversions.
-
-3. **Prioritize behavioral segmentation**  
-   Behavioral features outperform demographic ones in predicting purchases.
-
-4. **Optimize discount-driven promotions**  
-   Discount users are more likely to convert; personalized offers could increase revenue.
-
----
+- Business problem translation into a supervised learning objective.
+- Leakage-safe preprocessing with sklearn pipelines.
+- Baseline and nonlinear model comparison.
+- Cross-validation plus holdout evaluation.
+- Non-technical visual communication.
+- Model interpretation connected to marketing strategy, conversion lift, and revenue impact.
+- A deployable analytics dashboard that presents model results as a business decision tool.

@@ -1,5 +1,6 @@
 # Byte-compiled / optimized files
 __pycache__/
+.pycache/
 *.py[cod]
 *$py.class
 
@@ -26,9 +27,15 @@ dist/
 *.egg-info/
 .eggs/
 
+# Frontend dependencies/build output
+node_modules/
+frontend/node_modules/
+frontend/dist/
+
 # Logs
 *.log
 *.tmp
+.matplotlib_cache/
 
 # Spyder
 .spyproject/
