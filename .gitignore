@@ -48,5 +48,6 @@ frontend/dist/
 README.html
 README_files/
 *.html
+!frontend/index.html
 *_files/
 .vercel
