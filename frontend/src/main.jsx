@@ -104,9 +104,13 @@ function MetricCard({ label, value, sub, tone = "teal" }) {
   );
 }
 
-function ModelComparison() {
+function panelClass(baseClass, isActive) {
+  return `${baseClass}${isActive ? " activePanel" : ""}`;
+}
+
+function ModelComparison({ isActive }) {
   return (
-    <section className="panel modelPanel" id="model">
+    <section className={panelClass("panel modelPanel", isActive)} id="model">
       <div className="panelHeader">
         <div>
           <h2>Model Comparison</h2>
@@ -142,7 +146,7 @@ function Score({ label, value }) {
   );
 }
 
-function ImpactSimulator() {
+function ImpactSimulator({ isActive }) {
   const [outreachRate, setOutreachRate] = useState(20);
   const [revenue, setRevenue] = useState(100);
 
@@ -161,7 +165,7 @@ function ImpactSimulator() {
   }, [outreachRate, revenue]);
 
   return (
-    <section className="panel impactPanel" id="campaign">
+    <section className={panelClass("panel impactPanel", isActive)} id="campaign">
       <div className="panelHeader">
         <div>
           <h2>Business Impact Simulator</h2>
@@ -269,10 +273,10 @@ function ConfusionMatrix() {
   );
 }
 
-function FeatureDrivers() {
+function FeatureDrivers({ isActive }) {
   const max = Math.max(...featureImportance.map(([, value]) => value));
   return (
-    <section className="panel driversPanel" id="drivers">
+    <section className={panelClass("panel driversPanel", isActive)} id="drivers">
       <div className="panelHeader">
         <div>
           <h2>Top Purchase Drivers</h2>
@@ -294,9 +298,9 @@ function FeatureDrivers() {
   );
 }
 
-function SegmentTable() {
+function SegmentTable({ isActive }) {
   return (
-    <section className="panel segmentPanel" id="segments">
+    <section className={panelClass("panel segmentPanel", isActive)} id="segments">
       <div className="panelHeader">
         <div>
           <h2>Segment Strategy</h2>
@@ -335,14 +339,17 @@ function App() {
     if (!target) return;
 
     setActiveSection(targetId);
-    target.scrollIntoView({ behavior: "smooth", block: "start" });
+    target.scrollIntoView({ behavior: "smooth", block: "center" });
   }
 
   return (
     <main className="app">
       <Sidebar activeSection={activeSection} onNavigate={handleNavigate} />
       <section className="workspace">
-        <header className="topbar" id="overview">
+        <header
+          className={`topbar${activeSection === "overview" ? " activeSection" : ""}`}
+          id="overview"
+        >
           <div>
             <h1>Campaign Targeting Dashboard</h1>
             <p>Prioritize customers by purchase propensity and forecast conversion lift.</p>
@@ -359,12 +366,12 @@ function App() {
         </section>
 
         <section className="dashboardGrid">
-          <ModelComparison />
-          <ImpactSimulator />
+          <ModelComparison isActive={activeSection === "model"} />
+          <ImpactSimulator isActive={activeSection === "campaign"} />
           <RocChart />
           <ConfusionMatrix />
-          <FeatureDrivers />
-          <SegmentTable />
+          <FeatureDrivers isActive={activeSection === "drivers"} />
+          <SegmentTable isActive={activeSection === "segments"} />
         </section>
       </section>
     </main>
