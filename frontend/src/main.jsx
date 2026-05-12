@@ -40,8 +40,8 @@ const segmentRows = [
   ["Bottom 40%", "0.18", "Low", "$0", "Suppress spend"],
 ];
 
-const rocPath = "M 26 214 C 58 168, 85 119, 124 92 C 165 63, 206 45, 258 35";
-const logisticPath = "M 26 214 C 60 178, 96 140, 134 115 C 176 89, 214 71, 258 57";
+const rocPath = "M 58 208 C 96 142, 141 89, 201 62 C 254 38, 310 28, 372 24";
+const logisticPath = "M 58 208 C 102 154, 151 112, 209 82 C 259 56, 312 42, 360 36";
 const navItems = [
   ["Overview", "overview"],
   ["Model", "model"],
@@ -298,14 +298,28 @@ function RocChart() {
           <p>Ranking quality for likely purchasers</p>
         </div>
       </div>
-      <svg viewBox="0 0 300 250" className="roc">
-        <line x1="26" y1="214" x2="270" y2="214" />
-        <line x1="26" y1="214" x2="26" y2="24" />
-        <path className="baseline" d="M 26 214 L 270 24" />
+      <svg viewBox="0 0 420 260" className="roc" role="img" aria-label="ROC curve comparison">
+        <g className="gridLines">
+          <line x1="58" y1="164" x2="372" y2="164" />
+          <line x1="58" y1="120" x2="372" y2="120" />
+          <line x1="58" y1="76" x2="372" y2="76" />
+          <line x1="136" y1="208" x2="136" y2="24" />
+          <line x1="214" y1="208" x2="214" y2="24" />
+          <line x1="292" y1="208" x2="292" y2="24" />
+        </g>
+        <line className="axis" x1="58" y1="208" x2="384" y2="208" />
+        <line className="axis" x1="58" y1="208" x2="58" y2="18" />
+        <path className="baseline" d="M 58 208 L 372 24" />
         <path className="logistic" d={logisticPath} />
         <path className="forest" d={rocPath} />
-        <text x="26" y="238">Wasted outreach</text>
-        <text x="36" y="22">Purchasers captured</text>
+        <circle className="forestPoint" cx="372" cy="24" r="4" />
+        <circle className="logisticPoint" cx="360" cy="36" r="4" />
+        <text className="axisLabel xLabel" x="218" y="246">False positive rate</text>
+        <text className="axisLabel yLabel" x="18" y="122" transform="rotate(-90 18 122)">True positive rate</text>
+        <text className="tickLabel" x="48" y="229">0</text>
+        <text className="tickLabel" x="365" y="229">1.0</text>
+        <text className="tickLabel" x="27" y="211">0</text>
+        <text className="tickLabel" x="24" y="28">1.0</text>
       </svg>
       <div className="legend">
         <span><i className="forestDot" />Random Forest AUC 0.939</span>
