@@ -12,6 +12,9 @@ This project asks a more useful question for marketing leaders:
 
 To answer it, I built a reproducible purchase propensity modeling workflow, compared an interpretable Logistic Regression baseline against a nonlinear Random Forest classifier, and translated the results into an executive dashboard for campaign prioritization and business impact planning.
 
+**Live dashboard:** https://customerpurchaseprediction-six.vercel.app  
+**Repository:** https://github.com/JoshuaColePhD/Customer_Purchase_Prediction
+
 [![Customer purchase dashboard preview](figures/dashboard_preview.png)](frontend/)
 
 *The dashboard turns model results into a campaign decision tool with KPI tracking, model comparison, purchase-driver interpretation, segment strategy, and a configurable revenue impact simulator.*
