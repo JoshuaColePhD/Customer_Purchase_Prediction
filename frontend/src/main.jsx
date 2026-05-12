@@ -144,12 +144,12 @@ function downloadSummary(outreachRate, revenue, impact) {
 
 function Sidebar({ activeSection, onNavigate }) {
   return (
-    <aside className="sidebar">
+    <header className="dashboardHeader">
       <div className="brand">
         <span className="brandMark">CP</span>
         <div>
           <strong>Customer Purchase Prediction</strong>
-          <span>ML portfolio product</span>
+          <span>Executive campaign intelligence</span>
         </div>
       </div>
       <nav className="nav">
@@ -165,12 +165,11 @@ function Sidebar({ activeSection, onNavigate }) {
           </button>
         ))}
       </nav>
-      <div className="sidebarNote">
+      <div className="modelBadge">
         <span>Deployment candidate</span>
         <strong>Random Forest</strong>
-        <p>Best balance of precision, recall, and ranking quality for campaign targeting.</p>
       </div>
-    </aside>
+    </header>
   );
 }
 
@@ -420,8 +419,8 @@ function App() {
 
   return (
     <main className="app">
-      <Sidebar activeSection={activeSection} onNavigate={handleNavigate} />
-      <section className="workspace">
+      <section className="dashboardShell" aria-label="Customer purchase prediction dashboard">
+        <Sidebar activeSection={activeSection} onNavigate={handleNavigate} />
         <header
           className={`topbar${activeSection === "overview" ? " activeSection" : ""}`}
           id="overview"
