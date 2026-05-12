@@ -224,3 +224,9 @@ Customer_Purchase_Prediction/
 - Business impact simulation for conversion lift and revenue
 - Executive dashboard design for non-technical stakeholders
 - Deployable frontend packaging for Vercel
+
+## Contact
+
+**Joshua Cole, PhD**  
+People Analytics / Data Analytics  
+GitHub: https://github.com/JoshuaColePhD
